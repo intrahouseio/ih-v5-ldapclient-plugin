@@ -1,0 +1,7 @@
+{
+  "name": "ldapclient",
+  "description": "LDAP client plugin",
+  "service": "ldap",
+  "single": 1,
+  "nochannels": 1
+}

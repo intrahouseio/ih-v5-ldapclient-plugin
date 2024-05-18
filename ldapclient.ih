@@ -1,0 +1,7 @@
+{
+    "id":"ldapclient",
+    "description":"LDAP client plugin",
+    "cross":true,
+	"version":"5.0.0"
+}
+

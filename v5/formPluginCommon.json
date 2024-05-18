@@ -1,0 +1,147 @@
+{
+  "grid": [
+    { "id": "p1", "xs": 4, "class": "main", "table": "units" },
+    { "id": "p2", "xs": 4, "class": "main", "table": "units" },
+    { "id": "p3", "xs": 4, "class": "main", "table": "units" },
+
+    { "id": "p7", "xs": 8, "class": "main", "table": "units" },
+    { "id": "p71", "xs": 4, "class": "main", "table": "units" },
+    { "id": "p8", "xs": 8, "class": "main", "table": "units" },
+    { "id": "p81", "xs": 4, "class": "main", "table": "units" },
+    { "id": "p9", "xs": 12, "class": "main", "table": "unitsTreeTable", "height": "fill" }
+  ],
+
+  "spacing": 10,
+
+  "p1": [
+    {
+      "prop": "header",
+      "title": "Подключение к серверу LDAP",
+      "type": "header"
+    },
+
+    {
+      "prop": "url",
+      "title": "URL",
+      "type": "input",
+      "default": "ldap://127.0.0.1:389"
+    }
+  ],
+  "p2": [
+    {
+      "prop": "login",
+      "title": "Логин",
+      "type": "input",
+      "default":"cn=admin,dc=company,dc=com"
+    },
+    {
+      "prop": "pass",
+      "title": "Пароль",
+      "type": "password"
+    }
+  ],
+  "p3": [
+    { "prop": "loglevel", "title": "$LogLevel", "type": "droplist", "data": "loglevelList" },
+    { "prop": "txt", "title": "$Comment", "type": "input" }
+  ],
+
+  "p7": [
+    {
+      "prop": "header_groups",
+      "title": "Импорт групп",
+      "type": "header"
+    },
+    {
+      "prop": "search_groups",
+      "title": "Путь к группам",
+      "type": "input",
+      "default": "cn=groups,dc=company,dc=com"
+    },
+    {
+      "prop": "groups_filter",
+      "title": "Фильтр для импорта",
+      "type": "input",
+      "default": ""
+    }
+  ],
+  "p71": [
+    {
+      "prop": "header_groups",
+      "title": "Артибуты группы",
+      "type": "header"
+    },
+    {
+      "prop": "attr_group_name",
+      "title": "Наименование",
+      "type": "input",
+      "default": "cn"
+    },
+    {
+      "prop": "attr_group_id",
+      "title": "ID группы",
+      "type": "input",
+      "default": "gidNumber"
+    }
+  ],
+  "p8": [
+    {
+      "prop": "header",
+      "title": "Импорт учетных записей",
+      "type": "header"
+    },
+    {
+      "prop": "search_users",
+      "title": "Путь к учетным записям",
+      "type": "input",
+      "default": "cn=users,dc=company,dc=com"
+    },
+    {
+      "prop": "users_filter",
+      "title": "Фильтр для импорта",
+      "type": "input",
+      "default": "(objectClass=person)"
+    }
+  ],
+  "p81": [
+    {
+      "prop": "header_groups",
+      "title": "Артибуты учетной записи",
+      "type": "header"
+    },
+    {
+      "prop": "attr_user_name",
+      "title": "Имя пользователя",
+      "type": "input",
+      "default": "cn"
+    },
+    {
+      "prop": "attr_user_id",
+      "title": "ID пользователя",
+      "type": "input",
+      "default": "uid"
+    },
+    {
+      "prop": "attr_usergroup_id",
+      "title": "ID группы",
+      "type": "input",
+      "default": "gidNumber"
+    }
+  ],
+
+  "p9": [
+    {
+      "title": "",
+      "type": "table",
+      "prop": "unitsTreeTable",
+
+      "columns": [
+        { "prop": "name", "title": "ID", "type": "text", "width": 150 },
+        { "prop": "state", "title": "Состояние", "type": "text", "width": 150 },
+        { "prop": "laststart", "title": "Время запуска", "type": "text", "width": 150 },
+        { "prop": "laststop", "title": "Время останова", "type": "text", "width": 150 },
+        { "prop": "uptime", "title": "Uptime", "type": "text", "width": 150 },
+        { "prop": "error", "title": "Ошибка", "type": "text", "width": 250 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "ldapclient",
+  "version": "5.0.0",
+  "description": "LDAP client plugin",
+  "dependencies": {
+    "ldapjs-client": "^0.1.2"
+  },
+  "author": "INTRA",
+  "license": "MIT"
+}
