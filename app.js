@@ -9,15 +9,19 @@ const LdapClient = require('ldapjs-client');
 
 module.exports = async function(plugin) {
   const { url, login, pass, search_groups, search_users } = plugin.params;
- 
-  const client = new LdapClient({ url });
-  await bind();
 
+  const client = new LdapClient({ url });
+
+  // bind для проверки
+  await bind();
+  // client.unbind();
+  /*
   const gresponse = await searchSub(search_groups);
   plugin.log('Response groups: ' + util.inspect(gresponse));
 
   const response = await searchSub(search_users);
   plugin.log('Response people: ' + util.inspect(response));
+  */
 
   async function bind() {
     try {
@@ -35,6 +39,72 @@ module.exports = async function(plugin) {
       plugin.exit(2, 'ERROR: search ' + dn_str + ': ' + util.inspect(e));
     }
   }
+
+  async function getUsersFromLDAP() {
+    try {
+      const response = await searchSub(search_users);
+      if (!response) throw { message: 'No response for LDAP search: ' + search_users };
+
+      if (!Array.isArray(response))
+        throw { message: 'Invalid response for search: ' + search_users + util.inspect(response) };
+
+      const data = [];
+      response.forEach(item => {
+        if (item.cn && item.gidNumber) {
+          data.push({ id: item.uid, group: item.gidNumber, name: item.cn });
+        }
+      });
+      return data;
+    } catch (e) {
+      return e;
+    }
+  }
+
+  async function getGroupsFromLDAP() {
+    try {
+      const response = await searchSub(search_groups);
+      if (!response) throw { message: 'No response for LDAP search: ' + search_groups };
+
+      if (!Array.isArray(response))
+        throw {
+          message: 'Invalid response for search: ' + search_groups + util.inspect(response)
+        };
+
+      const data = [];
+      response.forEach(item => {
+        if (item.cn && item.gidNumber) {
+          data.push({ id: item.gidNumber, name: item.cn });
+        }
+      });
+      return data;
+    } catch (e) {
+      return e;
+    }
+  }
+
+  plugin.onCommand(async message => {
+    plugin.log('Get command ' + util.inspect(message), 1);
+    // Response не отправляем. После получения данных отправляем {type:'syncUsers', data:[]}
+    let result = 'Unknown command param: ' + message.param;
+
+    // await bind();
+    let data;
+    if (message.param == 'syncUsers') {
+      data = await getUsersFromLDAP(message.param);
+    } else if (message.param == 'syncGroups') {
+      data = await getGroupsFromLDAP(message.param);
+    }
+    // client.unbind();
+    result = Array.isArray(data) ? { type: message.param, data } : data;
+
+    if (result.type) {
+      plugin.send(result);
+    } else if (result.message) {
+      plugin.log('ERROR: ' + result.message);
+    } else {
+      plugin.log('ERROR: ' + util.inspect(result));
+    }
+  });
 };
 
 /*

@@ -3,5 +3,22 @@
   "description": "LDAP client plugin",
   "service": "ldap",
   "single": 1,
-  "nochannels": 1
+  "nochannels": 1,
+
+  "plugin_popup": [
+    {
+      "id": "syncGroups",
+      "type": "item",
+      "title": "Импорт групп с сервера LDAP",
+      "command": "send",
+      "param": { "emit": "plugin_command:syncGroups" }
+    },
+    {
+      "id": "syncUsers",
+      "type": "item",
+      "title": "Импорт пользователей с сервера LDAP",
+      "command": "send",
+      "param": { "emit": "plugin_command:syncUsers" }
+    }
+  ]
 }
