@@ -66,7 +66,7 @@
       "prop": "search_groups",
       "title": "Путь к группам",
       "type": "input",
-      "default": "cn=groups,dc=my-company,dc=com"
+      "default": "cn=users,dc=my-company,dc=com"
     },
     {
       "prop": "groups_filter",

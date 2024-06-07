@@ -6,10 +6,9 @@
  */
 
 const util = require('util');
-const LdapClient = require('ldapjs-client');
 
+const LDAPConnection = require('./lib/client');
 const Parser = require('./lib/parser');
-const utils = require('./lib/utils');
 
 module.exports = async function(plugin) {
   const {
@@ -24,6 +23,76 @@ module.exports = async function(plugin) {
 
   const parser = new Parser(plugin.params);
 
+  // bind для проверки
+  await tryStartBind(login, pass);
+
+  async function tryStartBind(dn, pw) {
+    const con = new LDAPConnection({ url, dn, pw }, plugin);
+    await con.tryBind();
+    if (con.error) plugin.exit(1, con.error);
+  }
+
+  plugin.onCommand(async message => {
+    plugin.log('Get command ' + util.inspect(message), 1);
+    if (message.param == 'authUser') return authUser(message);
+    if (message.param == 'syncUsers') return getUsersFromLDAP();
+    if (message.param == 'syncGroups') return getGroupsFromLDAP();
+
+    plugin.log('ERROR:Unknown command param: ' + message.param);
+  });
+
+  async function authUser(message) {
+    const { param, dn, pbx, uuid } = message;
+
+    plugin.log('authUser dn=' + dn + ' pbx=' + pbx);
+    const pw = Buffer.from(pbx, 'base64').toString();
+    plugin.log('authUser pass=' + pw);
+
+    const con = new LDAPConnection({ url, dn, pw }, plugin);
+    await con.tryBind();
+    if (!con.error) {
+      plugin.sendResponse(message, 1);
+    } else {
+      plugin.sendResponse({ uuid, dn, param, message: con.error }, 0);
+    }
+  }
+
+  async function getUsersFromLDAP() {
+    const attributes = parser.getUserSearchAttributes();
+    plugin.log('search attributes ' + util.inspect(attributes));
+    const response = await searchSub(search_users, { filter: users_filter, attributes });
+    if (response) {
+      const data = parser.getMappedUsers(response);
+      plugin.send({ type: 'syncUsers', data });
+    }
+  }
+
+  async function getGroupsFromLDAP() {
+    const attributes = parser.getGroupSearchAttributes();
+    plugin.log('search attributes ' + util.inspect(attributes));
+    const response = await searchSub(search_groups, { filter: groups_filter, attributes });
+    if (response) {
+      const data = parser.getMappedGroups(response);
+      plugin.send({ type: 'syncGroups', data });
+    }
+  }
+
+  async function searchSub(dn_str, opt = {}) {
+    const con = new LDAPConnection({ url, dn: login, pw: pass }, plugin);
+    let result = await con.bindAndSearch(dn_str, { scope: 'sub', ...opt });
+
+    if (!result) {
+      con.error = 'No response for LDAP search: ' + dn_str;
+    } else if (!Array.isArray(result)) {
+      con.error = 'Bad response for search: ' + util.inspect(result);
+      result = '';
+    }
+
+    if (con.error) plugin.log('ERROR: ' + con.error);
+    return result;
+  }
+
+  /*
   const client = new LdapClient({ url });
 
   // bind для проверки
@@ -35,16 +104,7 @@ module.exports = async function(plugin) {
   } catch (e) {
     plugin.exit(1, 'ERROR: Bind to ' + url + ' with dn=' + login + ' failed: ' + util.inspect(e));
   }
-  
-  /*
-  await sleep(2000);
-  
-  try {
-    await client.unbind();
-  } catch (e) {
-    plugin.log('Unbind error!! '+util.inspect(e));
-  }
-  */
+ 
 
   plugin.onCommand(async message => {
     plugin.log('Get command ' + util.inspect(message), 1);
@@ -143,11 +203,5 @@ module.exports = async function(plugin) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 };
-
-/*
- login: 'CN=krbtgt,CN=Users,DC=ih-systems,DC=lan',
-  pass: 'fa8c71601196cb7645372c85b60de6d6f602c11c93fa20a7e4209b014d672ca76de99c5526552656c34e4409c751118501a65f5807463a4d649239c09d609925',
-  param: 'authUser',
-  uuid: 'emit_unit_ldapclient_1717424126862',
-  type: 'command'
-  */
+*/
+};
