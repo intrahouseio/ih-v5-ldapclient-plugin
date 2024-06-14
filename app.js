@@ -70,9 +70,8 @@ module.exports = async function(plugin) {
   async function getGroupsFromLDAP() {
     const attributes = parser.getGroupSearchAttributes();
     plugin.log('search attributes ' + util.inspect(attributes));
-    let response = await searchSub(search_groups, { filter: groups_filter, attributes });
+    const response = await searchSub(search_groups, { filter: groups_filter, attributes });
     if (response) {
-      response = response.map(i => ({ ...i, name: i.cn }))
       const data = parser.getMappedGroups(response);
       plugin.send({ type: 'syncGroups', data });
     }

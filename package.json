@@ -1,6 +1,6 @@
 {
   "name": "ldapclient",
-  "version": "5.0.4",
+  "version": "5.0.5",
   "description": "LDAP client plugin",
   "dependencies": {
     "ldapjs-client": "^0.1.2"
