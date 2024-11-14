@@ -11,6 +11,10 @@ const LDAPConnection = require('./lib/client');
 const Parser = require('./lib/parser');
 
 module.exports = async function(plugin) {
+  if (!plugin.params.pass) {
+    plugin.params.pass = plugin.getPassword(plugin.params);
+  }
+  
   const {
     url,
     login,
