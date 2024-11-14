@@ -4,6 +4,7 @@
   "service": "ldap",
   "single": 1,
   "nochannels": 1,
+  "passwordProp":"pass",
 
   "plugin_popup": [
     {
