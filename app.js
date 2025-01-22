@@ -14,16 +14,8 @@ module.exports = async function(plugin) {
   if (!plugin.params.pass) {
     plugin.params.pass = plugin.getPassword(plugin.params);
   }
-  
-  const {
-    url,
-    login,
-    pass,
-    search_groups,
-    groups_filter,
-    search_users,
-    users_filter
-  } = plugin.params;
+
+  const { url, login, pass, search_groups, groups_filter, search_users, users_filter } = plugin.params;
 
   const parser = new Parser(plugin.params);
 
@@ -47,10 +39,7 @@ module.exports = async function(plugin) {
 
   async function authUser(message) {
     const { param, dn, pbx, uuid } = message;
-
-    // plugin.log('authUser dn=' + dn + ' pbx=' + pbx);
     const pw = Buffer.from(pbx, 'base64').toString();
-    // plugin.log('authUser pass=' + pw);
 
     const con = new LDAPConnection({ url, dn, pw }, plugin);
     await con.tryBind();
@@ -61,24 +50,54 @@ module.exports = async function(plugin) {
     }
   }
 
-  async function getUsersFromLDAP() {
+  async function getUsersFromLDAP(message) {
     const attributes = parser.getUserSearchAttributes();
     plugin.log('search attributes ' + util.inspect(attributes));
+
     const response = await searchSub(search_users, { filter: users_filter, attributes });
-    if (response) {
+    if (response && !response.error) {
       const data = parser.getMappedUsers(response);
       plugin.send({ type: 'syncUsers', data });
+      plugin.sendResponse(message, 1);
+    } else {
+      const error = response ? response.error : 'Failed syncUsers operation';
+      plugin.sendResponse({ ...message, message: error }, 0);
     }
+    /**
+    // Для теста без обращения к LDAP серверу
+    const data = [
+      {
+        dn: 'CN=testLDAP55,CN=Users,DC=ih-systems,DC=lan',
+        guid: 5555,
+        login: 'testLDAP55',
+        name: 'LDAP test 55',
+        memberOf: 'CN=Пользователи домена,CN=Users,DC=ih-systems,DC=lan'
+      }
+    ];
+    plugin.send({ type: 'syncUsers', data });
+    plugin.sendResponse(message, 1);
+    */
   }
 
-  async function getGroupsFromLDAP() {
+  async function getGroupsFromLDAP(message) {
     const attributes = parser.getGroupSearchAttributes();
     plugin.log('search attributes ' + util.inspect(attributes));
+
     const response = await searchSub(search_groups, { filter: groups_filter, attributes });
-    if (response) {
+    if (response && !response.error) {
       const data = parser.getMappedGroups(response);
       plugin.send({ type: 'syncGroups', data });
+      plugin.sendResponse(message, 1);
+    } else {
+      const error = response ? response.error : 'Failed syncGroups operation';
+      plugin.sendResponse({ ...message, message: error }, 0);
     }
+  /**
+    // Для теста без обращения к LDAP серверу
+    const data = [{ dn: 'CN=Пользователи домена,CN=Users,DC=ih-systems,DC=lan', guid: 12345, name: 'Пользователи домена' }];
+    plugin.send({ type: 'syncGroups', data });
+    plugin.sendResponse(message, 1);
+    */
   }
 
   async function searchSub(dn_str, opt = {}) {
@@ -91,8 +110,9 @@ module.exports = async function(plugin) {
       con.error = 'Bad response for search: ' + util.inspect(result);
       result = '';
     }
-
-    if (con.error) plugin.log('ERROR: ' + con.error);
-    return result;
+    if (!con.error) return result;
+  
+    plugin.log('ERROR: ' + con.error);
+    return {error: con.error};
   }
 };
