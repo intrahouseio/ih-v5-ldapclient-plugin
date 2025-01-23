@@ -31,8 +31,8 @@ module.exports = async function(plugin) {
   plugin.onCommand(async message => {
     plugin.log('Get command ' + util.inspect(message), 1);
     if (message.param == 'authUser') return authUser(message);
-    if (message.param == 'syncUsers') return getUsersFromLDAP();
-    if (message.param == 'syncGroups') return getGroupsFromLDAP();
+    if (message.param == 'syncUsers') return getUsersFromLDAP(message);
+    if (message.param == 'syncGroups') return getGroupsFromLDAP(message);
 
     plugin.log('ERROR:Unknown command param: ' + message.param);
   });
