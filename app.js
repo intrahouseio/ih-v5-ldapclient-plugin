@@ -22,9 +22,9 @@ module.exports = async function(plugin) {
   } = plugin.params;
 
   const parser = new Parser(plugin.params);
-
+  const passw = plugin.getPassword(plugin.params)
   // bind для проверки
-  await tryStartBind(login, pass);
+  await tryStartBind(login, passw);
 
   async function tryStartBind(dn, pw) {
     const con = new LDAPConnection({ url, dn, pw }, plugin);
@@ -122,7 +122,7 @@ module.exports = async function(plugin) {
   }
 
   async function searchSub(dn_str, opt = {}) {
-    const con = new LDAPConnection({ url, dn: login, pw: pass }, plugin);
+    const con = new LDAPConnection({ url, dn: login, pw: passw }, plugin);
     let result = await con.bindAndSearch(dn_str, { scope: 'sub', ...opt });
 
     if (!result) {
