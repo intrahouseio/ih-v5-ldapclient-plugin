@@ -33,12 +33,17 @@ module.exports = async function(plugin) {
   }
 
   plugin.onCommand(async message => {
-    plugin.log('Get command ' + util.inspect(message), 1);
-    if (message.param == 'authUser') return authUser(message);
-    if (message.param == 'syncUsers') return getUsersFromLDAP();
-    if (message.param == 'syncGroups') return getGroupsFromLDAP();
-
-    plugin.log('ERROR:Unknown command param: ' + message.param);
+    try {
+      plugin.log('Get command ' + util.inspect(message), 1);
+      if (message.param == 'authUser') return await authUser(message);
+      if (message.param == 'syncUsers') return await getUsersFromLDAP(message);
+      if (message.param == 'syncGroups') return await getGroupsFromLDAP(message);
+      throw {message:'Unknown command param: ' + message.param};
+    } catch (e) {
+      const errstr = typeof e === 'object' ? e.message : message.param +' error';
+      plugin.sendResponse({ ...message, message: errstr }, 0);
+      plugin.log('ERROR: ' + errstr);
+    }
   });
 
   async function authUser(message) {
@@ -57,13 +62,12 @@ module.exports = async function(plugin) {
     }
   }
 
-  async function getUsersFromLDAP() {
+  async function getUsersFromLDAP(message) {
     const attributes = parser.getUserSearchAttributes();
     plugin.log('search attributes ' + util.inspect(attributes));
     let response = await searchSub(search_users, { filter: users_filter, attributes });
     if (!response || !Array.isArray(response)) {
-      plugin.log('ERROR: No valid users response');
-      return;
+      throw {message:'No valid users response '};  
     }
 
     // Если AD, расширяем memberOf до транзитивного
@@ -109,16 +113,20 @@ module.exports = async function(plugin) {
 
     const data = parser.getMappedUsers(response);
     plugin.send({ type: 'syncUsers', data });
+    plugin.sendResponse({...message}, 1);
   }
 
-  async function getGroupsFromLDAP() {
+  async function getGroupsFromLDAP(message) {
     const attributes = parser.getGroupSearchAttributes();
     plugin.log('search attributes ' + util.inspect(attributes));
     const response = await searchSub(search_groups, { filter: groups_filter, attributes });
-    if (response) {
-      const data = parser.getMappedGroups(response);
-      plugin.send({ type: 'syncGroups', data });
+    if (!response || !Array.isArray(response)) {
+      throw {message:'No valid groups'};  
     }
+
+    const data = parser.getMappedGroups(response);
+    plugin.send({ type: 'syncGroups', data });
+    plugin.sendResponse({...message}, 1);
   }
 
   async function searchSub(dn_str, opt = {}) {
@@ -126,13 +134,13 @@ module.exports = async function(plugin) {
     let result = await con.bindAndSearch(dn_str, { scope: 'sub', ...opt });
 
     if (!result) {
-      con.error = 'No response for LDAP search: ' + dn_str;
-    } else if (!Array.isArray(result)) {
-      con.error = 'Bad response for search: ' + util.inspect(result);
-      result = '';
+      throw{message: 'No response for LDAP search: ' + dn_str};
+    } 
+    if (!Array.isArray(result)) {
+      throw{message:'Bad response for search: ' + util.inspect(result)};
+
     }
 
-    if (con.error) plugin.log('ERROR: ' + con.error);
     return result;
   }
 
